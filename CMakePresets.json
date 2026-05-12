@@ -1,0 +1,37 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "windows-x64-debug",
+      "displayName": "Windows x64 Debug",
+      "generator": "Visual Studio 18 2026",
+      "architecture": {
+        "value": "x64"
+      },
+      "binaryDir": "${sourceDir}/obj",
+      "cacheVariables": {}
+    },
+    {
+      "name": "windows-x64-release",
+      "displayName": "Windows x64 Release",
+      "inherits": "windows-x64-debug"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "Debug",
+      "configurePreset": "windows-x64-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "Release",
+      "configurePreset": "windows-x64-release",
+      "configuration": "Release"
+    }
+  ]
+}
