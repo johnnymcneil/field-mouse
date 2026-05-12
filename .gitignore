@@ -1,0 +1,30 @@
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+
+# Artifacts
+bin/
+obj/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+
+# Miscellaneous
+*.user
+*.VC.db
+*.VC.opendb
+*.suo
+*.obj
+*.pdb
+*.ilk
+*.idb
+*.tlog/
+*.log
+*.tmp
+*.cache
+*.aps
