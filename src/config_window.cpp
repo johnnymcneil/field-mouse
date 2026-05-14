@@ -4,12 +4,14 @@
 #include <QCloseEvent>
 #include <QComboBox>
 #include <QEvent>
+#include <QFile>
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPlainTextEdit>
+#include <QScrollArea>
 #include <QScrollBar>
 #include <QSignalBlocker>
 #include <QTimer>
@@ -241,29 +243,17 @@ void ConfigWindow::closeEvent(QCloseEvent* event) {
   event->ignore();
 }
 
-void ConfigWindow::buildUi() {
-  setStyleSheet(
-    QStringLiteral(
-      "ConfigWindow { background: #0f1720; color: #e6edf3; }"
-      "QFrame#card { background: #16212d; border: 1px solid #223244; border-radius: 18px; }"
-      "QLabel#heroTitle { font-size: 28px; font-weight: 700; color: #f7fbff; }"
-      "QLabel#heroBody { color: #9db0c2; font-size: 14px; }"
-      "QLabel#pill { background: #244538; color: #b7f5bf; border-radius: 999px; padding: 6px 12px; font-weight: 700; }"
-      "QLabel#cardTitle { font-size: 18px; font-weight: 700; color: #f0f6fc; }"
-      "QLabel#cardSubtitle { color: #8ea4b9; }"
-      "QCheckBox { spacing: 10px; font-size: 14px; color: #d8e2ec; }"
-      "QComboBox, QPlainTextEdit { background: #0f1720; color: #eef5fb; border: 1px solid #314454; border-radius: 10px; padding: 8px 10px; }"
-      "QComboBox::drop-down { width: 28px; border: none; }"
-      "QComboBox QAbstractItemView { background: #16212d; color: #eef5fb; selection-background-color: #30506c; }"
-      "QPlainTextEdit { selection-background-color: #30506c; }"
-      "QLabel#mapLabel { color: #adc0d1; font-weight: 600; }"
-    )
-  );
+void ConfigWindow::applyStyles() {
+  QFile styleFile(QStringLiteral(":/styles/config_window.qss"));
+  if (!styleFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    setStyleSheet({});
+    return;
+  }
 
-  auto* root = new QVBoxLayout(this);
-  root->setContentsMargins(24, 24, 24, 24);
-  root->setSpacing(18);
+  setStyleSheet(QString::fromUtf8(styleFile.readAll()));
+}
 
+void ConfigWindow::buildHeroSection(QVBoxLayout* root) {
   auto* heroCard = new QFrame(this);
   heroCard->setObjectName(QStringLiteral("card"));
   auto* heroLayout = new QHBoxLayout(heroCard);
@@ -274,7 +264,7 @@ void ConfigWindow::buildUi() {
   auto* heroTitle = new QLabel(QStringLiteral("Field Mouse"), heroCard);
   heroTitle->setObjectName(QStringLiteral("heroTitle"));
   auto* heroBody = new QLabel(
-    QStringLiteral("Remap mouse buttons, manage startup behavior, and watch live input events from a cleaner Qt front end."),
+    QStringLiteral("Configure mouse remapping, enable/disable remapping, and manage startup behavior."),
     heroCard
   );
   heroBody->setObjectName(QStringLiteral("heroBody"));
@@ -290,7 +280,9 @@ void ConfigWindow::buildUi() {
   heroLayout->addLayout(heroTextLayout, 1);
   heroLayout->addWidget(statusPill_, 0, Qt::AlignTop);
   root->addWidget(heroCard);
+}
 
+void ConfigWindow::buildBehaviorSection(QVBoxLayout* root) {
   QVBoxLayout* behaviorBody = nullptr;
   auto* behaviorCard = MakeCard(
     QStringLiteral("Behavior"),
@@ -307,7 +299,9 @@ void ConfigWindow::buildUi() {
   togglesLayout->addStretch(1);
   behaviorBody->addLayout(togglesLayout);
   root->addWidget(behaviorCard);
+}
 
+void ConfigWindow::buildMappingsSection(QVBoxLayout* root) {
   QVBoxLayout* mappingsBody = nullptr;
   auto* mappingsCard = MakeCard(
     QStringLiteral("Button Mapping"),
@@ -335,7 +329,9 @@ void ConfigWindow::buildUi() {
   }
   mappingsBody->addLayout(mappingsGrid);
   root->addWidget(mappingsCard);
+}
 
+void ConfigWindow::buildInputTesterSection(QVBoxLayout* root) {
   QVBoxLayout* testerBody = nullptr;
   auto* testerCard = MakeCard(
     QStringLiteral("Input Tester"),
@@ -364,13 +360,42 @@ void ConfigWindow::buildUi() {
   inputTesterLog_->setMinimumHeight(110);
   testerBody->addWidget(inputTesterLog_);
   root->addWidget(testerCard, 1);
+}
 
+void ConfigWindow::connectSignals() {
   QObject::connect(remapToggle_, &QCheckBox::toggled, this, [this](bool checked) {
     handleRemapToggled(checked);
   });
   QObject::connect(autostartToggle_, &QCheckBox::toggled, this, [this](bool checked) {
     handleAutostartToggled(checked);
   });
+}
+
+void ConfigWindow::buildUi() {
+  applyStyles();
+
+  auto* windowLayout = new QVBoxLayout(this);
+  windowLayout->setContentsMargins(0, 0, 0, 0);
+
+  auto* scrollArea = new QScrollArea(this);
+  scrollArea->setWidgetResizable(true);
+  scrollArea->setFrameShape(QFrame::NoFrame);
+  scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+  auto* content = new QWidget(scrollArea);
+  auto* root = new QVBoxLayout(content);
+  root->setContentsMargins(24, 24, 24, 24);
+  root->setSpacing(18);
+  root->setSizeConstraint(QLayout::SetMinimumSize);
+
+  buildHeroSection(root);
+  buildBehaviorSection(root);
+  buildMappingsSection(root);
+  buildInputTesterSection(root);
+  connectSignals();
+
+  scrollArea->setWidget(content);
+  windowLayout->addWidget(scrollArea);
 }
 
 void ConfigWindow::clearInputTesterLights() {

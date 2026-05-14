@@ -12,6 +12,7 @@ class QComboBox;
 class QLabel;
 class QPlainTextEdit;
 class QTimer;
+class QVBoxLayout;
 
 namespace FieldMouse {
 
@@ -28,7 +29,13 @@ protected:
   void closeEvent(QCloseEvent* event) override;
 
 private:
+  void applyStyles();
   void buildUi();
+  void buildHeroSection(QVBoxLayout* root);
+  void buildBehaviorSection(QVBoxLayout* root);
+  void buildMappingsSection(QVBoxLayout* root);
+  void buildInputTesterSection(QVBoxLayout* root);
+  void connectSignals();
   void clearInputTesterLights();
   void handleAutostartToggled(bool checked);
   void handleMappingChanged(size_t index, int selectedIndex);

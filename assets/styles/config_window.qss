@@ -1,0 +1,74 @@
+ConfigWindow {
+  background: #0f1720;
+  color: #e6edf3;
+}
+
+QFrame#card {
+  background: #16212d;
+  border: 1px solid #223244;
+  border-radius: 18px;
+}
+
+QLabel#heroTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: #f7fbff;
+}
+
+QLabel#heroBody {
+  color: #9db0c2;
+  font-size: 14px;
+}
+
+QLabel#pill {
+  background: #244538;
+  color: #b7f5bf;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 700;
+}
+
+QLabel#cardTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f0f6fc;
+}
+
+QLabel#cardSubtitle {
+  color: #8ea4b9;
+}
+
+QCheckBox {
+  spacing: 10px;
+  font-size: 14px;
+  color: #d8e2ec;
+}
+
+QComboBox,
+QPlainTextEdit {
+  background: #0f1720;
+  color: #eef5fb;
+  border: 1px solid #314454;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+QComboBox::drop-down {
+  width: 28px;
+  border: none;
+}
+
+QComboBox QAbstractItemView {
+  background: #16212d;
+  color: #eef5fb;
+  selection-background-color: #30506c;
+}
+
+QPlainTextEdit {
+  selection-background-color: #30506c;
+}
+
+QLabel#mapLabel {
+  color: #adc0d1;
+  font-weight: 600;
+}
