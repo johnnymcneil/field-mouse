@@ -32,33 +32,6 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
-    },
-    {
-      "name": "windows-mingw-base",
-      "hidden": true,
-      "generator": "Ninja",
-      "cacheVariables": {
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "CMAKE_PREFIX_PATH": "$env{QT_ROOT_DIR}"
-      }
-    },
-    {
-      "name": "windows-mingw-debug",
-      "displayName": "Windows MinGW x64 Debug",
-      "inherits": "windows-mingw-base",
-      "binaryDir": "${sourceDir}/obj/windows-mingw-debug",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "windows-mingw-release",
-      "displayName": "Windows MinGW x64 Release",
-      "inherits": "windows-mingw-base",
-      "binaryDir": "${sourceDir}/obj/windows-mingw-release",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
     }
   ],
   "buildPresets": [
