@@ -17,15 +17,13 @@ enum class MouseButton : int {
 };
 
 enum class InputTesterLight : size_t {
-  Any = 0,
-  Move = 1,
-  Wheel = 2,
-  Left = 3,
-  Right = 4,
-  Middle = 5,
-  X1 = 6,
-  X2 = 7,
-  Count = 8
+  Left = 0,
+  Right = 1,
+  Middle = 2,
+  Wheel = 3,
+  X1 = 4,
+  X2 = 5,
+  Count = 6
 };
 
 struct MouseInputEvent {
@@ -67,12 +65,10 @@ inline constexpr const char* kButtonKeys[] = {
 };
 
 inline constexpr const wchar_t* kInputTesterLightNames[] = {
-  L"Any",
-  L"Move",
-  L"Wheel",
   L"Left",
   L"Right",
   L"Middle",
+  L"Wheel",
   L"X1",
   L"X2"
 };

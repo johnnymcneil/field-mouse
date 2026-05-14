@@ -1,7 +1,5 @@
 #include "field_mouse/input.h"
 
-#include <string>
-
 #include "field_mouse/app_constants.h"
 #include "field_mouse/app_state.h"
 #include "field_mouse/app_types.h"
@@ -9,108 +7,6 @@
 
 namespace FieldMouse {
 namespace {
-
-InputTesterLight InputTesterLightFromMessage(UINT message, DWORD mouseData) {
-  switch (message) {
-  case WM_MOUSEMOVE:
-    return InputTesterLight::Move;
-  case WM_MOUSEWHEEL:
-  case WM_MOUSEHWHEEL:
-    return InputTesterLight::Wheel;
-  case WM_LBUTTONDOWN:
-  case WM_LBUTTONUP:
-    return InputTesterLight::Left;
-  case WM_RBUTTONDOWN:
-  case WM_RBUTTONUP:
-    return InputTesterLight::Right;
-  case WM_MBUTTONDOWN:
-  case WM_MBUTTONUP:
-    return InputTesterLight::Middle;
-  case WM_XBUTTONDOWN:
-  case WM_XBUTTONUP:
-    return HIWORD(mouseData) == XBUTTON2 ? InputTesterLight::X2 : InputTesterLight::X1;
-  default:
-    return InputTesterLight::Any;
-  }
-}
-
-const wchar_t* MouseMessageName(UINT message) {
-  switch (message) {
-  case WM_MOUSEMOVE:
-    return L"Move";
-  case WM_LBUTTONDOWN:
-    return L"Left Down";
-  case WM_LBUTTONUP:
-    return L"Left Up";
-  case WM_RBUTTONDOWN:
-    return L"Right Down";
-  case WM_RBUTTONUP:
-    return L"Right Up";
-  case WM_MBUTTONDOWN:
-    return L"Middle Down";
-  case WM_MBUTTONUP:
-    return L"Middle Up";
-  case WM_XBUTTONDOWN:
-    return L"X Button Down";
-  case WM_XBUTTONUP:
-    return L"X Button Up";
-  case WM_MOUSEWHEEL:
-    return L"Mouse Wheel";
-  case WM_MOUSEHWHEEL:
-    return L"Mouse Horizontal Wheel";
-  default:
-    return L"Mouse Event";
-  }
-}
-
-const wchar_t* ButtonNameFromMouseData(UINT message, DWORD mouseData) {
-  switch (message) {
-  case WM_XBUTTONDOWN:
-  case WM_XBUTTONUP:
-    return HIWORD(mouseData) == XBUTTON2 ? L"X2" : L"X1";
-  default:
-    return L"";
-  }
-}
-
-std::wstring FormatInputTesterText(const MouseInputEvent& event) {
-  const bool appInjected = event.extraInfo == kInjectedSentinel;
-  const bool injected = appInjected || (event.flags & (LLMHF_INJECTED | LLMHF_LOWER_IL_INJECTED)) != 0;
-  const wchar_t* sourceName = MouseMessageName(event.message);
-  const wchar_t* buttonName = ButtonNameFromMouseData(event.message, event.mouseData);
-
-  wchar_t buffer[256] = {};
-  if (event.message == WM_MOUSEWHEEL || event.message == WM_MOUSEHWHEEL) {
-    SHORT delta = static_cast<SHORT>(HIWORD(event.mouseData));
-    swprintf_s(buffer, L"%s %d at (%ld, %ld) [%s%s]",
-      sourceName,
-      static_cast<int>(delta),
-      event.x,
-      event.y,
-      injected ? L"injected" : L"regular",
-      appInjected ? L", ours" : L"");
-    return buffer;
-  }
-
-  if (buttonName[0] != L'\0') {
-    swprintf_s(buffer, L"%s %s at (%ld, %ld) [%s%s]",
-      sourceName,
-      buttonName,
-      event.x,
-      event.y,
-      injected ? L"injected" : L"regular",
-      appInjected ? L", ours" : L"");
-    return buffer;
-  }
-
-  swprintf_s(buffer, L"%s at (%ld, %ld) [%s%s]",
-    sourceName,
-    event.x,
-    event.y,
-    injected ? L"injected" : L"regular",
-    appInjected ? L", ours" : L"");
-  return buffer;
-}
 
 MouseButton SourceFromMessage(WPARAM msg, const MSLLHOOKSTRUCT* info) {
   switch (msg) {

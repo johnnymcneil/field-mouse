@@ -4,21 +4,27 @@
 #include <QWidget>
 
 #include <array>
+#include <memory>
 
 #include "field_mouse/app_types.h"
 
 class QCheckBox;
 class QComboBox;
 class QLabel;
-class QPlainTextEdit;
-class QTimer;
-class QVBoxLayout;
+class QPushButton;
+
+namespace Ui {
+class ConfigWindow;
+}
 
 namespace FieldMouse {
+
+class InputTesterWindow;
 
 class ConfigWindow : public QWidget {
 public:
   ConfigWindow();
+  ~ConfigWindow() override;
 
   void syncFromSettings();
   void showAndActivate();
@@ -31,26 +37,23 @@ protected:
 private:
   void applyStyles();
   void buildUi();
-  void buildHeroSection(QVBoxLayout* root);
-  void buildBehaviorSection(QVBoxLayout* root);
-  void buildMappingsSection(QVBoxLayout* root);
-  void buildInputTesterSection(QVBoxLayout* root);
+  void bindGeneratedWidgets();
+  void assignSemanticObjectNames();
+  void populateMappingCombos();
   void connectSignals();
-  void clearInputTesterLights();
   void handleAutostartToggled(bool checked);
   void handleMappingChanged(size_t index, int selectedIndex);
+  void handleOpenInputTester();
   void handleRemapToggled(bool checked);
-  void setTesterLightState(InputTesterLight light);
-  void updateInputTesterText(const MouseInputEvent& event);
   void updateWindowTitle();
 
   QLabel* statusPill_ = nullptr;
   QCheckBox* remapToggle_ = nullptr;
   QCheckBox* autostartToggle_ = nullptr;
+  QPushButton* openInputTesterButton_ = nullptr;
   std::array<QComboBox*, static_cast<size_t>(MouseButton::Count)> mapCombos_ = {};
-  std::array<QLabel*, static_cast<size_t>(InputTesterLight::Count)> inputTesterLights_ = {};
-  QPlainTextEdit* inputTesterLog_ = nullptr;
-  QTimer* clearTimer_ = nullptr;
+  std::unique_ptr<InputTesterWindow> inputTesterWindow_;
+  std::unique_ptr<Ui::ConfigWindow> ui_;
 };
 
 } // namespace FieldMouse

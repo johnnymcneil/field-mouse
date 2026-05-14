@@ -14,6 +14,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 set(CMAKE_FIND_PACKAGE_PREFER_CONFIG ON)
@@ -23,7 +24,10 @@ find_package(Qt6 CONFIG REQUIRED COMPONENTS Widgets)
 add_executable(FieldMouse WIN32
   src/app_state.cpp
   src/config_window.cpp
+  src/config_window.ui
   src/input.cpp
+  src/input_tester_window.cpp
+  src/input_tester_window.ui
   src/main.cpp
   src/resources.qrc
   src/settings.cpp
