@@ -6,6 +6,8 @@
 # Artifacts
 bin/
 obj/
+artifacts/
+.deps/
 
 # CMake
 CMakeFiles/
@@ -13,6 +15,7 @@ CMakeCache.txt
 cmake_install.cmake
 compile_commands.json
 CTestTestfile.cmake
+CMakeUserPresets.json
 
 # Miscellaneous
 *.user

@@ -7,31 +7,68 @@
   },
   "configurePresets": [
     {
-      "name": "windows-x64-debug",
-      "displayName": "Windows x64 Debug",
-      "generator": "Visual Studio 18 2026",
-      "architecture": {
-        "value": "x64"
-      },
-      "binaryDir": "${sourceDir}/obj",
-      "cacheVariables": {}
+      "name": "windows-msvc-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_PREFIX_PATH": "$env{QT_ROOT_DIR}"
+      }
     },
     {
-      "name": "windows-x64-release",
-      "displayName": "Windows x64 Release",
-      "inherits": "windows-x64-debug"
+      "name": "windows-msvc-debug",
+      "displayName": "Windows MSVC x64 Debug",
+      "inherits": "windows-msvc-base",
+      "binaryDir": "${sourceDir}/obj/windows-msvc-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "windows-msvc-release",
+      "displayName": "Windows MSVC x64 Release",
+      "inherits": "windows-msvc-base",
+      "binaryDir": "${sourceDir}/obj/windows-msvc-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "windows-mingw-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_PREFIX_PATH": "$env{QT_ROOT_DIR}"
+      }
+    },
+    {
+      "name": "windows-mingw-debug",
+      "displayName": "Windows MinGW x64 Debug",
+      "inherits": "windows-mingw-base",
+      "binaryDir": "${sourceDir}/obj/windows-mingw-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "windows-mingw-release",
+      "displayName": "Windows MinGW x64 Release",
+      "inherits": "windows-mingw-base",
+      "binaryDir": "${sourceDir}/obj/windows-mingw-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
     }
   ],
   "buildPresets": [
     {
       "name": "Debug",
-      "configurePreset": "windows-x64-debug",
-      "configuration": "Debug"
+      "configurePreset": "windows-msvc-debug"
     },
     {
       "name": "Release",
-      "configurePreset": "windows-x64-release",
-      "configuration": "Release"
+      "configurePreset": "windows-msvc-release"
     }
   ]
 }

@@ -5,6 +5,7 @@
 #include "field_mouse/app_constants.h"
 #include "field_mouse/app_state.h"
 #include "field_mouse/app_types.h"
+#include "field_mouse/config_window.h"
 
 namespace FieldMouse {
 namespace {
@@ -111,49 +112,6 @@ std::wstring FormatInputTesterText(const MouseInputEvent& event) {
   return buffer;
 }
 
-void RefreshInputTesterLights() {
-  if (!g_app.configWindow) {
-    return;
-  }
-
-  for (size_t i = 0; i < g_app.inputTesterLights.size(); ++i) {
-    if (g_app.inputTesterLights[i]) {
-      InvalidateRect(g_app.inputTesterLights[i], nullptr, TRUE);
-    }
-  }
-}
-
-void ClearInputTesterLights() {
-  g_app.inputTesterLightStates.fill(false);
-  RefreshInputTesterLights();
-}
-
-void ApplyInputTesterLightState(InputTesterLight light) {
-  g_app.inputTesterLightStates.fill(false);
-  g_app.inputTesterLightStates[ToIndex(InputTesterLight::Any)] = true;
-  if (light != InputTesterLight::Any) {
-    g_app.inputTesterLightStates[ToIndex(light)] = true;
-  }
-  RefreshInputTesterLights();
-}
-
-void ArmInputTesterLightTimer() {
-  if (g_app.configWindow) {
-    SetTimer(g_app.configWindow, kTesterLightClearTimer, 140, nullptr);
-  }
-}
-
-void UpdateInputTesterText(const MouseInputEvent& event) {
-  if (!g_app.inputTesterLog) {
-    return;
-  }
-
-  std::wstring text = FormatInputTesterText(event);
-  SetWindowTextW(g_app.inputTesterLog, text.c_str());
-  SendMessageW(g_app.inputTesterLog, EM_SETSEL, static_cast<WPARAM>(-1), static_cast<LPARAM>(-1));
-  SendMessageW(g_app.inputTesterLog, EM_SCROLLCARET, 0, 0);
-}
-
 MouseButton SourceFromMessage(WPARAM msg, const MSLLHOOKSTRUCT* info) {
   switch (msg) {
   case WM_LBUTTONDOWN:
@@ -184,13 +142,13 @@ bool IsButtonUpMessage(WPARAM msg) {
 } // namespace
 
 void HandleInputTesterEvent(const MouseInputEvent& event) {
-  ApplyInputTesterLightState(InputTesterLightFromMessage(event.message, event.mouseData));
-  UpdateInputTesterText(event);
-  ArmInputTesterLightTimer();
+  if (g_app.configWindow) {
+    g_app.configWindow->handleInputTesterEvent(event);
+  }
 }
 
 void PostInputTesterEvent(const MSLLHOOKSTRUCT* info, UINT message) {
-  HWND target = g_app.configWindow ? g_app.configWindow : g_app.mainWindow;
+  HWND target = g_app.mainWindow;
   if (!target) {
     return;
   }

@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="/">
+    <file alias="icons/field-mouse.ico">../assets/icons/field-mouse.ico</file>
+  </qresource>
+</RCC>

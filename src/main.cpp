@@ -1,3 +1,4 @@
+#include <QApplication>
 #include <windows.h>
 
 #include "field_mouse/app_state.h"
@@ -7,12 +8,12 @@
 
 using namespace FieldMouse;
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int) {
-  g_app.instance = hInstance;
+int main(int argc, char** argv) {
+  QApplication app(argc, argv);
+  app.setQuitOnLastWindowClosed(false);
+
+  g_app.instance = GetModuleHandleW(nullptr);
   g_app.startHidden = IsStartHiddenCommandLine(GetCommandLineW());
-  g_app.taskbarCreatedMessage = RegisterWindowMessageW(L"TaskbarCreated");
-  g_app.inputTesterLightOnBrush = CreateSolidBrush(RGB(96, 220, 120));
-  g_app.inputTesterLightOffBrush = CreateSolidBrush(RGB(80, 80, 80));
 
   LoadSettings();
 
@@ -25,5 +26,5 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int) {
   }
 
   HookMouse();
-  return RunMessageLoop();
+  return RunMessageLoop(app);
 }
