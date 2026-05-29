@@ -46,6 +46,7 @@ jobs:
           dir: 'C:\'
           cache: true
           set-env: true
+          aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@8c3695d4a4e1ceabf6a74dc6c79681656dc6b74b'
 
       - name: Install Inno Setup
         shell: pwsh
