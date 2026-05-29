@@ -16,6 +16,8 @@ $ErrorActionPreference = 'Stop'
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptRoot
+. (Join-Path $scriptRoot 'versioning.ps1')
+$versionInfo = Get-FieldMouseVersionInfo -RepoRoot $repoRoot
 
 function Resolve-FieldMouseQtRoot {
   param(
@@ -316,6 +318,12 @@ if ($effectiveToolchain -eq 'MinGW' -and $qtRootName -match 'msvc') {
 
 $cmakePresetPrefix = if ($effectiveToolchain -eq 'MSVC') { 'windows-msvc' } else { 'windows-mingw' }
 $cmakeConfigureArgs = @('--preset', "$cmakePresetPrefix-$($Configuration.ToLowerInvariant())")
+$cmakeConfigureArgs += @(
+  "-DFIELD_MOUSE_VERSION=$($versionInfo.SemanticVersion)",
+  "-DFIELD_MOUSE_VERSION_TAG=$($versionInfo.TagVersion)",
+  "-DFIELD_MOUSE_WINDOWS_VERSION=$($versionInfo.WindowsVersion)",
+  "-DFIELD_MOUSE_VERSION_COMMAS=$($versionInfo.WindowsVersionCommas)"
+)
 
 if ($effectiveToolchain -eq 'MSVC') {
   Enable-FieldMouseMsvcEnvironment
@@ -364,6 +372,7 @@ if ($Fresh -and (Test-Path -LiteralPath $binaryDir)) {
 
 Write-Host "Repository: $repoRoot"
 Write-Host "Configuration: $Configuration"
+Write-Host "Version: $($versionInfo.SemanticVersion)"
 Write-Host "Qt root: $resolvedQtRoot"
 Write-Host "Toolchain: $effectiveToolchain"
 

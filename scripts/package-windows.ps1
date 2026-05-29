@@ -3,21 +3,27 @@ param(
   [string]$Configuration = 'Release',
 
   [ValidateSet('MSVC', 'MinGW')]
-  [string]$Toolchain = 'MSVC'
+  [string]$Toolchain = 'MSVC',
+
+  [switch]$SkipArchive,
+
+  [switch]$UseExistingStaging
 )
 
 $ErrorActionPreference = 'Stop'
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptRoot
+. (Join-Path $scriptRoot 'versioning.ps1')
+$versionInfo = Get-FieldMouseVersionInfo -RepoRoot $repoRoot
 $outputDir = Join-Path $repoRoot "bin\$Configuration"
 $cmakePresetPrefix = if ($Toolchain -eq 'MSVC') { 'windows-msvc' } else { 'windows-mingw' }
 $buildDir = Join-Path $repoRoot "obj\$cmakePresetPrefix-$($Configuration.ToLowerInvariant())"
 $cachePath = Join-Path $buildDir 'CMakeCache.txt'
 $artifactDir = Join-Path $repoRoot 'artifacts'
 $stagingRoot = Join-Path $artifactDir 'staging'
-$stagingDir = Join-Path $stagingRoot 'FieldMouse'
-$archiveName = if ($Configuration -eq 'Release') { 'FieldMouse-windows-x64.zip' } else { "FieldMouse-windows-x64-$Configuration.zip" }
+$stagingDir = Join-Path $stagingRoot "FieldMouse-$($versionInfo.TagVersion)"
+$archiveName = if ($Configuration -eq 'Release') { "FieldMouse-windows-x64-$($versionInfo.TagVersion).zip" } else { "FieldMouse-windows-x64-$Configuration-$($versionInfo.TagVersion).zip" }
 $archivePath = Join-Path $artifactDir $archiveName
 
 $requiredFiles = @(
@@ -30,6 +36,7 @@ $requiredFiles = @(
   'LGPL_COMPLIANCE.md',
   'LICENSES\LGPL-3.0.txt',
   'LICENSES\GPL-3.0.txt',
+  'VERSION.txt',
   'platforms\qwindows.dll'
 )
 
@@ -56,23 +63,32 @@ foreach ($requiredFile in $requiredFiles) {
   }
 }
 
-if (Test-Path -LiteralPath $stagingRoot) {
-  Remove-Item -LiteralPath $stagingRoot -Recurse -Force
+if (-not $UseExistingStaging) {
+  if (Test-Path -LiteralPath $stagingRoot) {
+    Remove-Item -LiteralPath $stagingRoot -Recurse -Force
+  }
+
+  New-Item -ItemType Directory -Path $stagingDir -Force | Out-Null
+  Copy-Item -Path (Join-Path $outputDir '*') -Destination $stagingDir -Recurse -Force
+
+  $localOnlyPatterns = @(
+    'field-mouse-settings.json',
+    'field-mouse-data',
+    '*.ilk',
+    '*.pdb'
+  )
+
+  foreach ($localOnlyPattern in $localOnlyPatterns) {
+    Get-ChildItem -LiteralPath $stagingDir -Recurse -Force -Filter $localOnlyPattern -ErrorAction SilentlyContinue |
+      Remove-Item -Recurse -Force
+  }
+} elseif (-not (Test-Path -LiteralPath $stagingDir)) {
+  throw "Expected existing staging directory was not found: $stagingDir"
 }
 
-New-Item -ItemType Directory -Path $stagingDir -Force | Out-Null
-Copy-Item -Path (Join-Path $outputDir '*') -Destination $stagingDir -Recurse -Force
-
-$localOnlyPatterns = @(
-  'field-mouse-settings.json',
-  'field-mouse-data',
-  '*.ilk',
-  '*.pdb'
-)
-
-foreach ($localOnlyPattern in $localOnlyPatterns) {
-  Get-ChildItem -LiteralPath $stagingDir -Recurse -Force -Filter $localOnlyPattern -ErrorAction SilentlyContinue |
-    Remove-Item -Recurse -Force
+if ($SkipArchive) {
+  Write-Host "Prepared $stagingDir"
+  return
 }
 
 if (Test-Path -LiteralPath $archivePath) {

@@ -1,6 +1,22 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(FieldMouse LANGUAGES CXX RC)
+if(NOT DEFINED FIELD_MOUSE_VERSION)
+  set(FIELD_MOUSE_VERSION "1.0.0")
+endif()
+
+if(NOT DEFINED FIELD_MOUSE_VERSION_TAG)
+  set(FIELD_MOUSE_VERSION_TAG "v${FIELD_MOUSE_VERSION}")
+endif()
+
+if(NOT DEFINED FIELD_MOUSE_WINDOWS_VERSION)
+  set(FIELD_MOUSE_WINDOWS_VERSION "${FIELD_MOUSE_VERSION}.0")
+endif()
+
+if(NOT DEFINED FIELD_MOUSE_VERSION_COMMAS)
+  string(REPLACE "." "," FIELD_MOUSE_VERSION_COMMAS "${FIELD_MOUSE_WINDOWS_VERSION}")
+endif()
+
+project(FieldMouse VERSION ${FIELD_MOUSE_VERSION} LANGUAGES CXX RC)
 
 if(NOT WIN32)
   message(FATAL_ERROR "field-mouse only supports Windows.")
@@ -21,6 +37,18 @@ set(CMAKE_FIND_PACKAGE_PREFER_CONFIG ON)
 
 find_package(Qt6 CONFIG REQUIRED COMPONENTS Widgets)
 
+configure_file(
+  ${CMAKE_SOURCE_DIR}/src/app.manifest.in
+  ${CMAKE_BINARY_DIR}/generated/app.manifest
+  @ONLY
+)
+
+configure_file(
+  ${CMAKE_SOURCE_DIR}/src/version.rc.in
+  ${CMAKE_BINARY_DIR}/generated/version.rc
+  @ONLY
+)
+
 add_executable(FieldMouse WIN32
   src/app_state.cpp
   src/config_window.cpp
@@ -32,8 +60,9 @@ add_executable(FieldMouse WIN32
   src/resources.qrc
   src/settings.cpp
   src/windows.cpp
-  src/app.manifest
+  ${CMAKE_BINARY_DIR}/generated/app.manifest
   src/field_mouse.rc
+  ${CMAKE_BINARY_DIR}/generated/version.rc
 )
 
 target_include_directories(FieldMouse PRIVATE
@@ -47,6 +76,8 @@ target_compile_definitions(FieldMouse PRIVATE
   NOMINMAX
   WIN32_LEAN_AND_MEAN
   _WINDOWS
+  FIELD_MOUSE_VERSION=L"${FIELD_MOUSE_VERSION}"
+  FIELD_MOUSE_VERSION_TAG=L"${FIELD_MOUSE_VERSION_TAG}"
   $<$<CONFIG:Debug>:_DEBUG>
   $<$<CONFIG:Release>:NDEBUG>
 )
@@ -121,6 +152,9 @@ add_custom_command(TARGET FieldMouse POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "${CMAKE_SOURCE_DIR}/LICENSES/GPL-3.0.txt"
     "$<TARGET_FILE_DIR:FieldMouse>/LICENSES/GPL-3.0.txt"
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${CMAKE_SOURCE_DIR}/VERSION.txt"
+    "$<TARGET_FILE_DIR:FieldMouse>/VERSION.txt"
   VERBATIM
 )
 

@@ -1,0 +1,162 @@
+name: release-windows
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  QT_VERSION: 6.11.1
+  QT_ARCH: win64_msvc2022_64
+  FIELD_MOUSE_QT_ROOT: C:\Qt\6.11.1\msvc2022_64
+
+jobs:
+  release:
+    runs-on: windows-2022
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Validate tag version and set release variables
+        shell: pwsh
+        run: |
+          $version = (Get-Content -LiteralPath ./VERSION.txt -Raw).Trim()
+          $tag = "${{ github.ref_name }}"
+          if ($tag -ne "v$version") {
+            throw "Git tag $tag does not match VERSION.txt ($version)."
+          }
+
+          "FIELD_MOUSE_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "FIELD_MOUSE_VERSION_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "FIELD_MOUSE_STAGE_DIR=${{ github.workspace }}\artifacts\staging\FieldMouse-$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "FIELD_MOUSE_ZIP_PATH=${{ github.workspace }}\artifacts\FieldMouse-windows-x64-$tag.zip" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "FIELD_MOUSE_INSTALLER_PATH=${{ github.workspace }}\artifacts\FieldMouse-setup-$tag.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Qt
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip aqtinstall
+          if (-not (Test-Path -LiteralPath $env:FIELD_MOUSE_QT_ROOT)) {
+            python -m aqt install-qt windows desktop $env:QT_VERSION $env:QT_ARCH --outputdir C:\Qt
+          }
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress --yes
+
+      - name: Build release bundle
+        shell: pwsh
+        run: .\scripts\build-windows.ps1 -Configuration Release -QtRoot $env:FIELD_MOUSE_QT_ROOT
+
+      - name: Stage release bundle
+        shell: pwsh
+        run: .\scripts\package-windows.ps1 -Configuration Release -SkipArchive
+
+      - name: Azure login for signing
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign staged binaries
+        uses: azure/artifact-signing-action@v1
+        with:
+          endpoint: ${{ vars.ARTIFACT_SIGNING_ENDPOINT }}
+          signing-account-name: ${{ vars.ARTIFACT_SIGNING_ACCOUNT_NAME }}
+          certificate-profile-name: ${{ vars.ARTIFACT_SIGNING_CERTIFICATE_PROFILE }}
+          files-folder: ${{ env.FIELD_MOUSE_STAGE_DIR }}
+          files-folder-filter: '*.dll,*.exe'
+          files-folder-recurse: true
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+          exclude-environment-credential: true
+          exclude-workload-identity-credential: true
+          exclude-managed-identity-credential: true
+          exclude-shared-token-cache-credential: true
+          exclude-visual-studio-credential: true
+          exclude-visual-studio-code-credential: true
+          exclude-azure-cli-credential: false
+          exclude-azure-powershell-credential: true
+          exclude-azure-developer-cli-credential: true
+          exclude-interactive-browser-credential: true
+
+      - name: Create signed portable ZIP
+        shell: pwsh
+        run: .\scripts\package-windows.ps1 -Configuration Release -UseExistingStaging
+
+      - name: Build Win32 installer
+        shell: pwsh
+        run: .\scripts\build-installer.ps1 -Configuration Release
+
+      - name: Sign installer EXE
+        uses: azure/artifact-signing-action@v1
+        with:
+          endpoint: ${{ vars.ARTIFACT_SIGNING_ENDPOINT }}
+          signing-account-name: ${{ vars.ARTIFACT_SIGNING_ACCOUNT_NAME }}
+          certificate-profile-name: ${{ vars.ARTIFACT_SIGNING_CERTIFICATE_PROFILE }}
+          files: ${{ env.FIELD_MOUSE_INSTALLER_PATH }}
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+          exclude-environment-credential: true
+          exclude-workload-identity-credential: true
+          exclude-managed-identity-credential: true
+          exclude-shared-token-cache-credential: true
+          exclude-visual-studio-credential: true
+          exclude-visual-studio-code-credential: true
+          exclude-azure-cli-credential: false
+          exclude-azure-powershell-credential: true
+          exclude-azure-developer-cli-credential: true
+          exclude-interactive-browser-credential: true
+
+      - name: Generate release notes
+        shell: pwsh
+        run: |
+          @"
+          Release version: $env:FIELD_MOUSE_VERSION_TAG
+          Qt version: $env:QT_VERSION
+
+          Artifacts:
+          - Portable ZIP
+          - Win32 installer EXE
+          "@ | Set-Content -LiteralPath ./artifacts/release-notes.txt -Encoding utf8
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: field-mouse-release-${{ env.FIELD_MOUSE_VERSION_TAG }}
+          path: |
+            ${{ env.FIELD_MOUSE_ZIP_PATH }}
+            ${{ env.FIELD_MOUSE_INSTALLER_PATH }}
+
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = $env:FIELD_MOUSE_VERSION_TAG
+          $notesPath = Join-Path $PWD 'artifacts\release-notes.txt'
+          $files = @(
+            $env:FIELD_MOUSE_ZIP_PATH,
+            $env:FIELD_MOUSE_INSTALLER_PATH
+          )
+
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag @files --clobber
+            gh release edit $tag --notes-file $notesPath
+          } else {
+            gh release create $tag @files --title $tag --notes-file $notesPath
+          }

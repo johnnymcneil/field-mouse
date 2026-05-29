@@ -53,6 +53,10 @@ Implemented:
 
 ## Build (Windows 11, x64 only)
 
+The release version is sourced from `VERSION.txt` at the repository root. Local
+release packaging and the GitHub Actions release workflow both validate against
+that version.
+
 Prerequisites:
 
 * Qt 6.11.1 MSVC 2022 64-bit kit installed at `C:\Qt\6.11.1\msvc2022_64`
@@ -95,8 +99,43 @@ Create a local release archive after a release build:
 1. `./scripts/package-windows.ps1 -Configuration Release`
 
 The package script verifies that the executable, Qt runtime files, platform
-plugin, and license/compliance files are present before creating
-`artifacts/FieldMouse-windows-x64.zip`.
+plugin, version file, and license/compliance files are present before creating
+`artifacts/FieldMouse-windows-x64-v1.0.0.zip`.
+
+Create a local EXE installer after staging a release bundle:
+
+1. Install Inno Setup 6
+2. `./scripts/build-installer.ps1 -Configuration Release`
+
+Create a local MSIX package after staging a release bundle:
+
+1. Set `FIELD_MOUSE_MSIX_IDENTITY_NAME`
+2. Set `FIELD_MOUSE_MSIX_PUBLISHER`
+3. `./scripts/build-msix.ps1 -Configuration Release`
+
+## Release Automation
+
+GitHub Actions release packaging lives in `.github/workflows/release-windows.yml`.
+Pushing a tag in the form `v*.*.*` triggers a Windows release build that:
+
+1. Validates the tag against `VERSION.txt`
+2. Builds the MSVC Release bundle
+3. Signs every staged `.dll` and `.exe` in the release bundle with Azure Trusted Signing
+4. Produces a signed portable ZIP and a signed Inno Setup EXE installer
+5. Uploads those two artifacts to the matching GitHub Release
+
+The workflow expects repository variables and secrets for:
+
+* Azure Trusted Signing: endpoint, signing account name, certificate profile, and Azure login credentials
+
+See `.github/release-configuration.md` for the exact variable/secret names and a
+`gh`-based setup command.
+
+MSIX packaging remains available as a local-only step for manual Store uploads:
+
+1. Set `FIELD_MOUSE_MSIX_IDENTITY_NAME`
+2. Set `FIELD_MOUSE_MSIX_PUBLISHER`
+3. `./scripts/build-msix.ps1 -Configuration Release`
 
 If you plan to redistribute binaries that bundle Qt, use a shared-library Qt
 build and deploy with `windeployqt` or an equivalent process. Release bundles
